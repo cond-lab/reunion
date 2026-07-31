@@ -3,7 +3,7 @@ import { supabase, supabaseAlta } from './supabase';
 import { Plus, Trash2, X, LogOut, Mail, ArrowLeft, Sun, Moon, Check, RotateCcw, Send, MessageSquare, MinusCircle, UserPlus, Shield, Copy } from 'lucide-react';
 
 /* ═══ Pon aquí tu email. Solo esta cuenta ve el panel de administración ═══ */
-const ADMIN = 'r.almela@es.polygon.eu';
+const ADMIN = 'rafa@polygon.es';
 
 /* ══ TEMA ══ */
 function useTema() {
@@ -371,7 +371,7 @@ function Ficha({ punto, comentarios, usuario, esAdmin, onCerrar, onComentar, onS
           </div>
 
           {detalle && (
-            <p className="mt-4 pl-3.5 border-l-2 border-ink/12 dark:border-white/12 text-[14.5px] leading-relaxed whitespace-pre-wrap text-ink/70 dark:text-white/60">
+            <p className="mt-4 pl-3.5 border-l-2 border-signal/40 text-[14.5px] leading-relaxed whitespace-pre-wrap text-ink/80 dark:text-white/80">
               {detalle}
             </p>
           )}
@@ -387,7 +387,7 @@ function Ficha({ punto, comentarios, usuario, esAdmin, onCerrar, onComentar, onS
             </div>
 
             {comentarios.length === 0 ? (
-              <p className="text-[13.5px] text-ink/35 dark:text-white/25 leading-relaxed">
+              <p className="text-[13.5px] text-ink/50 dark:text-white/40 leading-relaxed">
                 Sin anotaciones todavía. Escribe abajo cómo va el asunto.
               </p>
             ) : (
@@ -395,7 +395,7 @@ function Ficha({ punto, comentarios, usuario, esAdmin, onCerrar, onComentar, onS
                 {comentarios.map(c => c.sin_novedades ? (
                   <div key={c.id} className="flex items-center gap-2.5 py-0.5">
                     <MinusCircle size={13} className="text-ink/25 dark:text-white/20 shrink-0" />
-                    <span className="dato text-[11.5px] text-ink/35 dark:text-white/25">
+                    <span className="dato text-[11.5px] text-ink/50 dark:text-white/40">
                       {nombreDe(c.autor)} · sin novedades · {fechaCorta(c.created_at)}
                     </span>
                   </div>
@@ -407,10 +407,10 @@ function Ficha({ punto, comentarios, usuario, esAdmin, onCerrar, onComentar, onS
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-baseline gap-2">
-                        <span className="text-[13px] font-semibold text-ink/80 dark:text-white/75">{nombreDe(c.autor)}</span>
-                        <span className="dato text-[10.5px] text-ink/35 dark:text-white/25">{fechaCorta(c.created_at)}</span>
+                        <span className="text-[13px] font-semibold text-ink dark:text-white">{nombreDe(c.autor)}</span>
+                        <span className="dato text-[10.5px] text-ink/50 dark:text-white/40">{fechaCorta(c.created_at)}</span>
                       </div>
-                      <p className="text-[14px] leading-relaxed text-ink/70 dark:text-white/60 whitespace-pre-wrap mt-0.5">
+                      <p className="text-[14.5px] leading-relaxed text-ink/85 dark:text-white/85 whitespace-pre-wrap mt-0.5">
                         {c.texto}
                       </p>
                     </div>
@@ -584,19 +584,28 @@ function AltaUsuario({ onCerrar }) {
 }
 
 /* ══ TARJETA ══ */
-function Punto({ punto, puedeBorrar, indice, nuevos, totalComentarios, onAbrir, onResolver, onBorrar }) {
+function Punto({ punto, puedeBorrar, indice, nuevos, totalComentarios, ultimo, onAbrir, onResolver, onBorrar }) {
   const r = punto.resuelto;
 
   return (
     <article
       onClick={() => onAbrir(punto)}
       style={{ animationDelay: `${Math.min(indice * 45, 400)}ms` }}
-      className={`surge group relative rounded-lg overflow-hidden cursor-pointer transition-all duration-200
+      className={`surge group relative rounded-lg cursor-pointer transition-all duration-200
         ${r ? 'bg-ink/[0.02] dark:bg-white/[0.015]' : 'bg-white dark:bg-[#1B232E] shadow-[0_1px_2px_rgba(28,37,48,0.06)] dark:shadow-none'}
         border border-ink/8 dark:border-white/[0.07] hover:border-ink/20 dark:hover:border-white/20 hover:shadow-[0_2px_8px_rgba(28,37,48,0.08)] dark:hover:shadow-none`}>
 
-      <span className={`absolute left-0 top-0 bottom-0 w-[3px] transition-all duration-300 group-hover:w-[5px]
+      <span className={`absolute left-0 top-0 bottom-0 w-[3px] rounded-l-lg transition-all duration-300 group-hover:w-[5px]
         ${r ? 'bg-conform' : 'bg-signal'}`} />
+
+      {/* Aviso de comentarios sin leer */}
+      {nuevos > 0 && (
+        <span className="dato absolute -top-2 -right-2 z-10 h-[22px] min-w-[22px] px-1.5 rounded-full
+                         bg-signal text-white text-[11px] font-semibold flex items-center justify-center
+                         ring-2 ring-paper dark:ring-[#141A22] shadow-sm">
+          {nuevos > 99 ? '99+' : nuevos}
+        </span>
+      )}
 
       <div className="pl-6 pr-4 py-4">
         <div className="flex items-start justify-between gap-3">
@@ -606,11 +615,6 @@ function Punto({ punto, puedeBorrar, indice, nuevos, totalComentarios, onAbrir, 
           </h3>
 
           <div className="flex items-center gap-1 shrink-0 -mt-0.5" onClick={e => e.stopPropagation()}>
-            {nuevos > 0 && (
-              <span className="dato h-[19px] min-w-[19px] px-1.5 rounded-full bg-signal text-white text-[10px] font-semibold flex items-center justify-center mr-0.5">
-                {nuevos}
-              </span>
-            )}
             <button onClick={() => onResolver(punto)} title={r ? 'Reabrir' : 'Resolver'}
               className={`h-7 px-2.5 rounded-md etiqueta flex items-center gap-1.5 transition-all
                 ${r ? 'text-conform hover:bg-conform/10' : 'text-ink/40 hover:text-conform hover:bg-conform/10 dark:text-white/30'}`}>
@@ -638,6 +642,25 @@ function Punto({ punto, puedeBorrar, indice, nuevos, totalComentarios, onAbrir, 
             </>
           )}
         </div>
+
+        {/* Última anotación */}
+        {ultimo && (
+          <div className="flex items-baseline gap-2 mt-2 pt-2 border-t border-ink/[0.07] dark:border-white/[0.06]">
+            <span className="dato text-[11px] text-ink/45 dark:text-white/35 shrink-0">
+              {fechaCorta(ultimo.created_at)}
+            </span>
+            <span className="w-1 h-1 rounded-full bg-ink/15 dark:bg-white/15 shrink-0 self-center" />
+            {ultimo.sin_novedades ? (
+              <span className="dato text-[12px] text-ink/40 dark:text-white/30 truncate">
+                {nombreDe(ultimo.autor)} · sin novedades
+              </span>
+            ) : (
+              <span className="text-[13px] text-ink/75 dark:text-white/70 truncate">
+                <span className="font-semibold">{nombreDe(ultimo.autor)}:</span> {ultimo.texto}
+              </span>
+            )}
+          </div>
+        )}
       </div>
     </article>
   );
@@ -752,6 +775,11 @@ export default function App() {
   // Comentarios agrupados
   const porPunto = {};
   for (const c of comentarios) (porPunto[c.punto_id] ||= []).push(c);
+
+  const ultimoDe = puntoId => {
+    const cs = porPunto[puntoId];
+    return cs && cs.length ? cs[cs.length - 1] : null;
+  };
 
   const nuevosDe = puntoId => {
     const visto = lecturas[puntoId];
@@ -902,6 +930,7 @@ export default function App() {
               <Punto key={p.id} punto={p} indice={i} puedeBorrar={p.autor === usuario || esAdmin}
                 nuevos={nuevosDe(p.id)}
                 totalComentarios={(porPunto[p.id] || []).length}
+                ultimo={ultimoDe(p.id)}
                 onAbrir={abrirFicha} onResolver={resolver} onBorrar={borrar} />
             ))}
           </div>
