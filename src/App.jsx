@@ -3,7 +3,7 @@ import { supabase, supabaseAlta } from './supabase';
 import { Plus, Trash2, X, LogOut, Mail, ArrowLeft, Sun, Moon, Check, RotateCcw, Send, MessageSquare, MinusCircle, UserPlus, Shield, Copy } from 'lucide-react';
 
 /* ═══ Pon aquí tu email. Solo esta cuenta ve el panel de administración ═══ */
-const ADMIN = 'rafa@polygon.es';
+const ADMIN = 'r.almela@es.polygon.eu';
 
 /* ══ TEMA ══ */
 function useTema() {
