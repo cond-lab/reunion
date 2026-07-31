@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from './supabase';
-import { Plus, Trash2, X, LogOut, Mail, ArrowLeft, Sun, Moon, Check, RotateCcw } from 'lucide-react';
+import { Plus, Trash2, X, LogOut, Mail, ArrowLeft, Sun, Moon, Check, RotateCcw, Send, MessageSquare, MinusCircle } from 'lucide-react';
 
 /* ══ TEMA ══ */
 function useTema() {
@@ -19,6 +19,20 @@ const campo =
   "dark:bg-white/[0.04] dark:text-white dark:placeholder-white/25 dark:border-white/10 dark:focus:bg-white/[0.07]";
 
 const etiquetaCampo = "etiqueta block mb-2 text-ink/40 dark:text-white/35";
+
+const nombreDe = email => email.split('@')[0];
+
+function horaDe(iso) {
+  return new Date(iso).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+}
+
+function fechaCorta(iso) {
+  const d = new Date(iso);
+  const hoy = new Date();
+  const mismoDia = d.toDateString() === hoy.toDateString();
+  if (mismoDia) return horaDe(iso);
+  return d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }) + ' · ' + horaDe(iso);
+}
 
 /* ══ MARCA ══ */
 function Marca({ compacta = false }) {
@@ -75,7 +89,6 @@ function Acceso({ toggleTema, tema }) {
 
       <div className="flex-1 flex items-center justify-center px-6 pb-20">
         <div className="w-full max-w-[380px]">
-
           <div className="mb-9">
             <div className="etiqueta text-signal mb-3">
               {vista === 'acceso' ? 'Acceso' : 'Recuperar contraseña'}
@@ -97,7 +110,7 @@ function Acceso({ toggleTema, tema }) {
                 </p>
               </div>
               <button onClick={() => { setVista('acceso'); setEnviado(false); }}
-                className="etiqueta flex items-center gap-2 text-ink/40 hover:text-signal dark:text-white/35 dark:hover:text-signal transition-colors">
+                className="etiqueta flex items-center gap-2 text-ink/40 hover:text-signal dark:text-white/35 transition-colors">
                 <ArrowLeft size={12} /> Volver
               </button>
             </div>
@@ -113,20 +126,17 @@ function Acceso({ toggleTema, tema }) {
                 <input type="password" value={clave} onChange={e => setClave(e.target.value)}
                   placeholder="••••••••" required className={campo} autoComplete="current-password" />
               </div>
-
               {error && (
-                <div className="flex gap-2.5 text-[13px] leading-snug text-ink/70 dark:text-white/60 bg-signal/10 border-l-2 border-signal rounded-r-lg px-3 py-2.5">
+                <div className="text-[13px] leading-snug text-ink/70 dark:text-white/60 bg-signal/10 border-l-2 border-signal rounded-r-lg px-3 py-2.5">
                   {error}
                 </div>
               )}
-
               <button type="submit" disabled={cargando}
                 className="w-full h-12 rounded-lg bg-ink text-paper dark:bg-signal dark:text-ink font-semibold text-[15px] hover:opacity-90 disabled:opacity-40 transition-opacity active:scale-[0.99]">
                 {cargando ? 'Entrando…' : 'Entrar'}
               </button>
-
               <button type="button" onClick={() => { setVista('recuperar'); setError(''); }}
-                className="etiqueta text-ink/35 hover:text-signal dark:text-white/30 dark:hover:text-signal transition-colors">
+                className="etiqueta text-ink/35 hover:text-signal dark:text-white/30 transition-colors">
                 He olvidado la contraseña
               </button>
             </form>
@@ -141,7 +151,7 @@ function Acceso({ toggleTema, tema }) {
                   placeholder="nombre@polygon.es" required className={campo} autoFocus />
               </div>
               {error && (
-                <div className="text-[13px] leading-snug text-ink/70 dark:text-white/60 bg-signal/10 border-l-2 border-signal rounded-r-lg px-3 py-2.5">
+                <div className="text-[13px] text-ink/70 dark:text-white/60 bg-signal/10 border-l-2 border-signal rounded-r-lg px-3 py-2.5">
                   {error}
                 </div>
               )}
@@ -150,7 +160,7 @@ function Acceso({ toggleTema, tema }) {
                 <Mail size={15} /> {cargando ? 'Enviando…' : 'Enviar enlace'}
               </button>
               <button type="button" onClick={() => { setVista('acceso'); setError(''); }}
-                className="etiqueta flex items-center gap-2 text-ink/35 hover:text-signal dark:text-white/30 dark:hover:text-signal transition-colors">
+                className="etiqueta flex items-center gap-2 text-ink/35 hover:text-signal dark:text-white/30 transition-colors">
                 <ArrowLeft size={12} /> Volver
               </button>
             </form>
@@ -186,7 +196,6 @@ function NuevaClave() {
         <div className="etiqueta text-signal mb-3">Contraseña</div>
         <h1 className="fecha-hero text-[52px] text-ink dark:text-white mb-6">Nueva<br />clave</h1>
         <div className="h-px bg-ink/10 dark:bg-white/10 mb-8" />
-
         {listo ? (
           <div className="flex items-start gap-3 panel">
             <div className="w-8 h-8 rounded-lg bg-conform/15 flex items-center justify-center shrink-0">
@@ -237,12 +246,10 @@ function Redactar({ onGuardar, onCerrar }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
-      <div className="absolute inset-0 bg-ink/50 dark:bg-black/70 backdrop-blur-[2px]" onClick={onCerrar} />
-
+      <div className="absolute inset-0 bg-ink/40 dark:bg-black/60 backdrop-blur-[2px]" onClick={onCerrar} />
       <div className="relative w-full sm:max-w-[520px] bg-paper dark:bg-[#1B232E] rounded-t-2xl sm:rounded-xl
-                      border-t sm:border border-ink/10 dark:border-white/10 shadow-2xl panel">
-        <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-signal rounded-l-xl hidden sm:block" />
-
+                      border-t sm:border border-ink/10 dark:border-white/10 shadow-2xl panel overflow-hidden">
+        <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-signal hidden sm:block" />
         <div className="flex items-center justify-between px-6 h-14 border-b border-ink/8 dark:border-white/[0.07]">
           <span className="etiqueta text-ink/45 dark:text-white/35">Nuevo punto</span>
           <button onClick={onCerrar} aria-label="Cerrar"
@@ -250,7 +257,6 @@ function Redactar({ onGuardar, onCerrar }) {
             <X size={16} />
           </button>
         </div>
-
         <form onSubmit={e => { e.preventDefault(); if (titulo.trim()) onGuardar(titulo.trim(), detalle.trim()); }}
           className="p-6 space-y-5">
           <div>
@@ -271,7 +277,7 @@ function Redactar({ onGuardar, onCerrar }) {
               Cancelar
             </button>
             <button type="submit" disabled={!titulo.trim()}
-              className="flex-1 h-11 rounded-lg bg-ink text-paper dark:bg-signal dark:text-ink font-semibold text-[14px] hover:opacity-90 disabled:opacity-30 disabled:cursor-not-allowed transition-opacity active:scale-[0.99]">
+              className="flex-1 h-11 rounded-lg bg-ink text-paper dark:bg-signal dark:text-ink font-semibold text-[14px] hover:opacity-90 disabled:opacity-30 transition-opacity active:scale-[0.99]">
               Añadir al parte
             </button>
           </div>
@@ -281,25 +287,178 @@ function Redactar({ onGuardar, onCerrar }) {
   );
 }
 
-/* ══ PUNTO ══ */
-function Punto({ punto, esMio, indice, onResolver, onBorrar }) {
-  const [abierto, setAbierto] = useState(false);
+/* ══ FICHA DEL PUNTO ══ */
+function Ficha({ punto, comentarios, usuario, onCerrar, onComentar, onSinNovedades, onResolver, onBorrar }) {
+  const [texto, setTexto] = useState('');
+  const [enviando, setEnviando] = useState(false);
+  const finRef = useRef(null);
   const r = punto.resuelto;
   const detalle = punto.descripcion?.trim();
-  const hora = new Date(punto.created_at).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+
+  useEffect(() => {
+    const esc = e => e.key === 'Escape' && onCerrar();
+    window.addEventListener('keydown', esc);
+    return () => window.removeEventListener('keydown', esc);
+  }, [onCerrar]);
+
+  useEffect(() => {
+    finRef.current?.scrollIntoView({ block: 'nearest' });
+  }, [comentarios.length]);
+
+  async function enviar(e) {
+    e?.preventDefault();
+    if (!texto.trim() || enviando) return;
+    setEnviando(true);
+    await onComentar(punto.id, texto.trim());
+    setTexto('');
+    setEnviando(false);
+  }
+
+  async function sinNovedades() {
+    setEnviando(true);
+    await onSinNovedades(punto.id);
+    setEnviando(false);
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+      <div className="absolute inset-0 bg-ink/40 dark:bg-black/60 backdrop-blur-[2px]" onClick={onCerrar} />
+
+      <div className="relative w-full sm:max-w-[560px] max-h-[92vh] sm:max-h-[85vh] flex flex-col
+                      bg-paper dark:bg-[#1B232E] rounded-t-2xl sm:rounded-xl
+                      border-t sm:border border-ink/10 dark:border-white/10 shadow-2xl panel overflow-hidden">
+
+        <div className={`absolute left-0 top-0 bottom-0 w-[3px] hidden sm:block ${r ? 'bg-conform' : 'bg-signal'}`} />
+
+        {/* Cabecera */}
+        <div className="shrink-0 border-b border-ink/8 dark:border-white/[0.07]">
+          <div className="flex items-center justify-between px-6 h-14">
+            <span className={`etiqueta ${r ? 'text-conform' : 'text-signal'}`}>
+              {r ? 'Resuelto' : 'Pendiente'}
+            </span>
+            <div className="flex items-center gap-1">
+              <button onClick={() => onResolver(punto)}
+                className={`h-8 px-3 rounded-md etiqueta flex items-center gap-1.5 transition-colors
+                  ${r ? 'text-conform hover:bg-conform/10' : 'text-ink/45 hover:text-conform hover:bg-conform/10 dark:text-white/35'}`}>
+                {r ? <><RotateCcw size={11} /> Reabrir</> : <><Check size={12} strokeWidth={3} /> Resolver</>}
+              </button>
+              {punto.autor === usuario && (
+                <button onClick={() => { onBorrar(punto.id); onCerrar(); }} title="Eliminar punto"
+                  className="w-8 h-8 rounded-md flex items-center justify-center text-ink/30 hover:text-red-500 hover:bg-red-500/10 dark:text-white/25 transition-colors">
+                  <Trash2 size={14} />
+                </button>
+              )}
+              <button onClick={onCerrar} aria-label="Cerrar"
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-ink/35 hover:text-ink hover:bg-ink/5 dark:text-white/30 dark:hover:text-white dark:hover:bg-white/5 transition-colors">
+                <X size={16} />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Cuerpo con scroll */}
+        <div className="flex-1 overflow-y-auto px-6 py-5">
+          <h2 className={`text-[19px] font-bold leading-snug ${r ? 'text-ink/45 dark:text-white/30' : 'text-ink dark:text-white'}`}>
+            {punto.titulo}
+          </h2>
+          <div className="flex items-center gap-2.5 mt-2">
+            <span className="dato text-[11px] text-ink/40 dark:text-white/30">{nombreDe(punto.autor)}</span>
+            <span className="w-1 h-1 rounded-full bg-ink/15 dark:bg-white/15" />
+            <span className="dato text-[11px] text-ink/40 dark:text-white/30">{fechaCorta(punto.created_at)}</span>
+          </div>
+
+          {detalle && (
+            <p className="mt-4 pl-3.5 border-l-2 border-ink/12 dark:border-white/12 text-[14.5px] leading-relaxed whitespace-pre-wrap text-ink/70 dark:text-white/60">
+              {detalle}
+            </p>
+          )}
+
+          {/* Seguimiento */}
+          <div className="mt-7">
+            <div className="flex items-center gap-2 mb-4">
+              <span className="etiqueta text-ink/40 dark:text-white/30">Seguimiento</span>
+              <span className="flex-1 h-px bg-ink/8 dark:bg-white/8" />
+              {comentarios.length > 0 && (
+                <span className="dato text-[10px] text-ink/30 dark:text-white/25">{comentarios.length}</span>
+              )}
+            </div>
+
+            {comentarios.length === 0 ? (
+              <p className="text-[13.5px] text-ink/35 dark:text-white/25 leading-relaxed">
+                Sin anotaciones todavía. Escribe abajo cómo va el asunto.
+              </p>
+            ) : (
+              <div className="space-y-3.5">
+                {comentarios.map(c => c.sin_novedades ? (
+                  <div key={c.id} className="flex items-center gap-2.5 py-0.5">
+                    <MinusCircle size={13} className="text-ink/25 dark:text-white/20 shrink-0" />
+                    <span className="dato text-[11.5px] text-ink/35 dark:text-white/25">
+                      {nombreDe(c.autor)} · sin novedades · {fechaCorta(c.created_at)}
+                    </span>
+                  </div>
+                ) : (
+                  <div key={c.id} className="flex gap-3">
+                    <div className={`w-7 h-7 rounded-md shrink-0 flex items-center justify-center text-[11px] font-bold
+                      ${c.autor === usuario ? 'bg-signal/20 text-signal' : 'bg-ink/8 text-ink/50 dark:bg-white/10 dark:text-white/50'}`}>
+                      {c.autor[0].toUpperCase()}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-[13px] font-semibold text-ink/80 dark:text-white/75">{nombreDe(c.autor)}</span>
+                        <span className="dato text-[10.5px] text-ink/35 dark:text-white/25">{fechaCorta(c.created_at)}</span>
+                      </div>
+                      <p className="text-[14px] leading-relaxed text-ink/70 dark:text-white/60 whitespace-pre-wrap mt-0.5">
+                        {c.texto}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+                <div ref={finRef} />
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Redactar comentario */}
+        <div className="shrink-0 border-t border-ink/8 dark:border-white/[0.07] p-4 bg-chalk/50 dark:bg-black/20">
+          <form onSubmit={enviar} className="flex items-end gap-2">
+            <textarea
+              value={texto}
+              onChange={e => setTexto(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviar(); } }}
+              placeholder="Añade una anotación…"
+              rows={1}
+              className={campo + ' resize-none py-2.5 text-[14px] min-h-[42px] max-h-28'}
+            />
+            <button type="submit" disabled={!texto.trim() || enviando} aria-label="Enviar"
+              className="shrink-0 w-[42px] h-[42px] rounded-lg bg-ink text-paper dark:bg-signal dark:text-ink flex items-center justify-center hover:opacity-90 disabled:opacity-25 transition-opacity active:scale-95">
+              <Send size={15} />
+            </button>
+          </form>
+          <button onClick={sinNovedades} disabled={enviando}
+            className="etiqueta mt-2.5 flex items-center gap-1.5 text-ink/35 hover:text-ink/60 dark:text-white/25 dark:hover:text-white/50 transition-colors disabled:opacity-40">
+            <MinusCircle size={12} /> Marcar sin novedades
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ══ TARJETA ══ */
+function Punto({ punto, esMio, indice, nuevos, totalComentarios, onAbrir, onResolver, onBorrar }) {
+  const r = punto.resuelto;
 
   return (
     <article
+      onClick={() => onAbrir(punto)}
       style={{ animationDelay: `${Math.min(indice * 45, 400)}ms` }}
-      className={`surge group relative rounded-lg overflow-hidden transition-colors duration-300
-        ${r ? 'bg-ink/[0.02] dark:bg-white/[0.015]' : 'bg-white dark:bg-[#1B232E] shadow-[0_1px_2px_rgba(10,16,23,0.05)] dark:shadow-none'}
-        border border-ink/8 dark:border-white/[0.07] hover:border-ink/15 dark:hover:border-white/15`}>
+      className={`surge group relative rounded-lg overflow-hidden cursor-pointer transition-all duration-200
+        ${r ? 'bg-ink/[0.02] dark:bg-white/[0.015]' : 'bg-white dark:bg-[#1B232E] shadow-[0_1px_2px_rgba(28,37,48,0.06)] dark:shadow-none'}
+        border border-ink/8 dark:border-white/[0.07] hover:border-ink/20 dark:hover:border-white/20 hover:shadow-[0_2px_8px_rgba(28,37,48,0.08)] dark:hover:shadow-none`}>
 
-      {/* Franja de estado — la firma */}
-      <button onClick={() => onResolver(punto)}
-        aria-label={r ? 'Marcar como pendiente' : 'Marcar como resuelto'}
-        className={`absolute left-0 top-0 bottom-0 w-[3px] transition-all duration-300 hover:w-[6px]
-          ${r ? 'bg-conform' : 'bg-signal'}`} />
+      <span className={`absolute left-0 top-0 bottom-0 w-[3px] transition-all duration-300 group-hover:w-[5px]
+        ${r ? 'bg-conform' : 'bg-signal'}`} />
 
       <div className="pl-6 pr-4 py-4">
         <div className="flex items-start justify-between gap-3">
@@ -308,13 +467,15 @@ function Punto({ punto, esMio, indice, onResolver, onBorrar }) {
             {punto.titulo}
           </h3>
 
-          <div className="flex items-center gap-1 shrink-0 -mt-0.5">
-            <button onClick={() => onResolver(punto)}
-              title={r ? 'Reabrir' : 'Resolver'}
+          <div className="flex items-center gap-1 shrink-0 -mt-0.5" onClick={e => e.stopPropagation()}>
+            {nuevos > 0 && (
+              <span className="dato h-[19px] min-w-[19px] px-1.5 rounded-full bg-signal text-white text-[10px] font-semibold flex items-center justify-center mr-0.5">
+                {nuevos}
+              </span>
+            )}
+            <button onClick={() => onResolver(punto)} title={r ? 'Reabrir' : 'Resolver'}
               className={`h-7 px-2.5 rounded-md etiqueta flex items-center gap-1.5 transition-all
-                ${r
-                  ? 'text-conform hover:bg-conform/10'
-                  : 'text-ink/40 hover:text-conform hover:bg-conform/10 dark:text-white/30'}`}>
+                ${r ? 'text-conform hover:bg-conform/10' : 'text-ink/40 hover:text-conform hover:bg-conform/10 dark:text-white/30'}`}>
               {r ? <><RotateCcw size={11} /> Reabrir</> : <><Check size={12} strokeWidth={3} /> Resolver</>}
             </button>
             {esMio && (
@@ -327,27 +488,18 @@ function Punto({ punto, esMio, indice, onResolver, onBorrar }) {
         </div>
 
         <div className="flex items-center gap-2.5 mt-2.5">
-          <span className="dato text-[11px] text-ink/40 dark:text-white/30">{hora}</span>
+          <span className="dato text-[11px] text-ink/40 dark:text-white/30">{horaDe(punto.created_at)}</span>
           <span className="w-1 h-1 rounded-full bg-ink/15 dark:bg-white/15" />
-          <span className="dato text-[11px] text-ink/40 dark:text-white/30 truncate">
-            {punto.autor.split('@')[0]}
-          </span>
-          {detalle && (
+          <span className="dato text-[11px] text-ink/40 dark:text-white/30 truncate">{nombreDe(punto.autor)}</span>
+          {totalComentarios > 0 && (
             <>
               <span className="w-1 h-1 rounded-full bg-ink/15 dark:bg-white/15" />
-              <button onClick={() => setAbierto(v => !v)}
-                className="dato text-[11px] text-signal hover:underline underline-offset-2">
-                {abierto ? 'ocultar detalle' : 'ver detalle'}
-              </button>
+              <span className="dato text-[11px] text-ink/40 dark:text-white/30 flex items-center gap-1">
+                <MessageSquare size={10} /> {totalComentarios}
+              </span>
             </>
           )}
         </div>
-
-        {abierto && detalle && (
-          <p className="panel mt-3.5 pl-3 border-l border-ink/12 dark:border-white/12 text-[13.5px] leading-relaxed whitespace-pre-wrap text-ink/65 dark:text-white/55">
-            {detalle}
-          </p>
-        )}
       </div>
     </article>
   );
@@ -359,9 +511,14 @@ export default function App() {
   const [sesion, setSesion] = useState(null);
   const [cargandoSesion, setCargandoSesion] = useState(true);
   const [recuperando, setRecuperando] = useState(false);
+
   const [puntos, setPuntos] = useState([]);
+  const [comentarios, setComentarios] = useState([]);
+  const [lecturas, setLecturas] = useState({});
   const [cargandoPuntos, setCargandoPuntos] = useState(true);
+
   const [redactando, setRedactando] = useState(false);
+  const [abierto, setAbierto] = useState(null);
   const [filtro, setFiltro] = useState('pendientes');
 
   useEffect(() => {
@@ -373,9 +530,18 @@ export default function App() {
     return () => subscription.unsubscribe();
   }, []);
 
+  const usuario = sesion?.user?.email;
+
   async function cargar() {
-    const { data } = await supabase.from('puntos').select('*').order('created_at', { ascending: true });
-    if (data) setPuntos(data);
+    if (!usuario) return;
+    const [p, c, l] = await Promise.all([
+      supabase.from('puntos').select('*').order('created_at', { ascending: true }),
+      supabase.from('comentarios').select('*').order('created_at', { ascending: true }),
+      supabase.from('lecturas').select('*').eq('usuario', usuario),
+    ]);
+    if (p.data) setPuntos(p.data);
+    if (c.data) setComentarios(c.data);
+    if (l.data) setLecturas(Object.fromEntries(l.data.map(x => [x.punto_id, x.visto_en])));
   }
 
   useEffect(() => {
@@ -385,16 +551,17 @@ export default function App() {
     return () => clearInterval(t);
   }, [sesion]);
 
-  async function guardar(titulo, descripcion) {
+  async function guardarPunto(titulo, descripcion) {
     setRedactando(false);
     await supabase.from('puntos').insert({
-      titulo, descripcion: descripcion || null, autor: sesion.user.email, resuelto: false,
+      titulo, descripcion: descripcion || null, autor: usuario, resuelto: false,
     });
     cargar();
   }
 
   async function resolver(p) {
     setPuntos(prev => prev.map(x => (x.id === p.id ? { ...x, resuelto: !x.resuelto } : x)));
+    setAbierto(a => (a && a.id === p.id ? { ...a, resuelto: !a.resuelto } : a));
     await supabase.from('puntos').update({ resuelto: !p.resuelto }).eq('id', p.id);
   }
 
@@ -403,18 +570,66 @@ export default function App() {
     await supabase.from('puntos').delete().eq('id', id);
   }
 
+  async function marcarVisto(puntoId) {
+    const ahora = new Date().toISOString();
+    setLecturas(prev => ({ ...prev, [puntoId]: ahora }));
+    await supabase.from('lecturas').upsert(
+      { usuario, punto_id: puntoId, visto_en: ahora },
+      { onConflict: 'usuario,punto_id' }
+    );
+  }
+
+  function abrirFicha(punto) {
+    setAbierto(punto);
+    marcarVisto(punto.id);
+  }
+
+  function cerrarFicha() {
+    if (abierto) marcarVisto(abierto.id);
+    setAbierto(null);
+  }
+
+  async function comentar(puntoId, texto) {
+    await supabase.from('comentarios').insert({
+      punto_id: puntoId, texto, autor: usuario, sin_novedades: false,
+    });
+    await marcarVisto(puntoId);
+    cargar();
+  }
+
+  async function sinNovedades(puntoId) {
+    await supabase.from('comentarios').insert({
+      punto_id: puntoId, texto: 'Sin novedades', autor: usuario, sin_novedades: true,
+    });
+    await marcarVisto(puntoId);
+    cargar();
+  }
+
   if (cargandoSesion) return <div className="min-h-screen bg-paper dark:bg-[#141A22]" />;
   if (recuperando) return <NuevaClave />;
   if (!sesion) return <Acceso toggleTema={toggleTema} tema={tema} />;
 
+  // Comentarios agrupados
+  const porPunto = {};
+  for (const c of comentarios) (porPunto[c.punto_id] ||= []).push(c);
+
+  const nuevosDe = puntoId => {
+    const visto = lecturas[puntoId];
+    return (porPunto[puntoId] || []).filter(c =>
+      !c.sin_novedades &&
+      c.autor !== usuario &&
+      (!visto || new Date(c.created_at) > new Date(visto))
+    ).length;
+  };
+
   const pendientes = puntos.filter(p => !p.resuelto);
   const resueltos = puntos.filter(p => p.resuelto);
   const lista = filtro === 'pendientes' ? pendientes : filtro === 'resueltos' ? resueltos : puntos;
+  const totalNuevos = puntos.reduce((n, p) => n + nuevosDe(p.id), 0);
 
   const hoy = new Date();
   const diaSemana = hoy.toLocaleDateString('es-ES', { weekday: 'long' });
   const diaMes = hoy.toLocaleDateString('es-ES', { day: 'numeric', month: 'long' });
-  const usuario = sesion.user.email;
 
   const filtros = [
     { id: 'pendientes', txt: 'Pendientes', n: pendientes.length },
@@ -422,15 +637,33 @@ export default function App() {
     { id: 'todos',      txt: 'Todo',       n: puntos.length },
   ];
 
+  const fichaActual = abierto ? (puntos.find(p => p.id === abierto.id) || abierto) : null;
+
   return (
     <div className="min-h-screen bg-paper dark:bg-[#141A22] transition-colors duration-300">
-      {redactando && <Redactar onGuardar={guardar} onCerrar={() => setRedactando(false)} />}
+      {redactando && <Redactar onGuardar={guardarPunto} onCerrar={() => setRedactando(false)} />}
+      {fichaActual && (
+        <Ficha
+          punto={fichaActual}
+          comentarios={porPunto[fichaActual.id] || []}
+          usuario={usuario}
+          onCerrar={cerrarFicha}
+          onComentar={comentar}
+          onSinNovedades={sinNovedades}
+          onResolver={resolver}
+          onBorrar={borrar}
+        />
+      )}
 
-      {/* Barra superior */}
       <header className="sticky top-0 z-30 bg-paper/90 dark:bg-[#141A22]/90 backdrop-blur-md border-b border-ink/8 dark:border-white/[0.06]">
         <div className="max-w-[680px] mx-auto px-6 h-14 flex items-center justify-between">
           <Marca compacta />
           <div className="flex items-center gap-1">
+            {totalNuevos > 0 && (
+              <span className="dato h-[19px] min-w-[19px] px-1.5 rounded-full bg-signal text-white text-[10px] font-semibold flex items-center justify-center mr-1.5">
+                {totalNuevos}
+              </span>
+            )}
             <button onClick={toggleTema} aria-label="Cambiar tema"
               className="w-8 h-8 rounded-lg flex items-center justify-center text-ink/35 hover:text-ink hover:bg-ink/5 dark:text-white/30 dark:hover:text-white dark:hover:bg-white/5 transition-colors">
               {tema === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
@@ -448,14 +681,9 @@ export default function App() {
       </header>
 
       <main className="max-w-[680px] mx-auto px-6 pb-32">
-
-        {/* HÉROE: la fecha */}
         <div className="pt-12 pb-8">
           <div className="etiqueta text-signal mb-3">{diaSemana}</div>
-          <h1 className="fecha-hero text-[clamp(48px,13vw,84px)] text-ink dark:text-white">
-            {diaMes}
-          </h1>
-
+          <h1 className="fecha-hero text-[clamp(48px,13vw,84px)] text-ink dark:text-white">{diaMes}</h1>
           <div className="flex items-center gap-5 mt-6">
             <span className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-signal" />
@@ -474,7 +702,6 @@ export default function App() {
 
         <div className="h-px bg-ink/10 dark:bg-white/10" />
 
-        {/* Filtros + añadir */}
         <div className="flex items-center justify-between gap-4 py-5">
           <div className="flex items-center gap-1">
             {filtros.map(f => (
@@ -488,14 +715,12 @@ export default function App() {
               </button>
             ))}
           </div>
-
           <button onClick={() => setRedactando(true)}
             className="hidden sm:flex items-center gap-2 h-9 px-4 rounded-lg bg-ink text-paper dark:bg-signal dark:text-ink text-[13px] font-semibold hover:opacity-90 transition-opacity active:scale-[0.98]">
             <Plus size={15} strokeWidth={2.5} /> Añadir punto
           </button>
         </div>
 
-        {/* Lista */}
         {cargandoPuntos ? (
           <div className="space-y-2.5">
             {[0, 1, 2].map(i => (
@@ -514,7 +739,7 @@ export default function App() {
                 ? 'No queda nada pendiente para la reunión de hoy.'
                 : filtro === 'resueltos'
                 ? 'Los puntos que marques como resueltos aparecerán aquí.'
-                : 'Añade el primer punto a tratar en la reunión de mañana.'}
+                : 'Añade el primer punto a tratar en la reunión.'}
             </p>
             {filtro !== 'resueltos' && (
               <button onClick={() => setRedactando(true)}
@@ -527,13 +752,14 @@ export default function App() {
           <div className="space-y-2.5">
             {lista.map((p, i) => (
               <Punto key={p.id} punto={p} indice={i} esMio={p.autor === usuario}
-                onResolver={resolver} onBorrar={borrar} />
+                nuevos={nuevosDe(p.id)}
+                totalComentarios={(porPunto[p.id] || []).length}
+                onAbrir={abrirFicha} onResolver={resolver} onBorrar={borrar} />
             ))}
           </div>
         )}
       </main>
 
-      {/* Botón flotante móvil */}
       <button onClick={() => setRedactando(true)} aria-label="Añadir punto"
         className="sm:hidden fixed bottom-6 right-6 w-14 h-14 rounded-full bg-ink dark:bg-signal
                    flex items-center justify-center shadow-lg shadow-ink/25 dark:shadow-signal/25
