@@ -37,6 +37,16 @@ function fechaCorta(iso) {
   return d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }) + ' · ' + horaDe(iso);
 }
 
+/* Fecha completa: siempre con día y mes, para los comentarios */
+function fechaHora(iso) {
+  const d = new Date(iso);
+  const hoy = new Date();
+  const dia = d.toDateString() === hoy.toDateString()
+    ? 'hoy'
+    : d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+  return dia + ' · ' + horaDe(iso);
+}
+
 /* ══ MARCA ══ */
 function Marca({ compacta = false }) {
   return (
@@ -396,7 +406,7 @@ function Ficha({ punto, comentarios, usuario, esAdmin, onCerrar, onComentar, onS
                   <div key={c.id} className="flex items-center gap-2.5 py-0.5">
                     <MinusCircle size={13} className="text-ink/25 dark:text-white/20 shrink-0" />
                     <span className="dato text-[11.5px] text-ink/50 dark:text-white/40">
-                      {nombreDe(c.autor)} · sin novedades · {fechaCorta(c.created_at)}
+                      {nombreDe(c.autor)} · sin novedades · {fechaHora(c.created_at)}
                     </span>
                   </div>
                 ) : (
@@ -408,7 +418,7 @@ function Ficha({ punto, comentarios, usuario, esAdmin, onCerrar, onComentar, onS
                     <div className="flex-1 min-w-0">
                       <div className="flex items-baseline gap-2">
                         <span className="text-[13px] font-semibold text-ink dark:text-white">{nombreDe(c.autor)}</span>
-                        <span className="dato text-[10.5px] text-ink/50 dark:text-white/40">{fechaCorta(c.created_at)}</span>
+                        <span className="dato text-[10.5px] text-ink/50 dark:text-white/40">{fechaHora(c.created_at)}</span>
                       </div>
                       <p className="text-[14.5px] leading-relaxed text-ink/85 dark:text-white/85 whitespace-pre-wrap mt-0.5">
                         {c.texto}
@@ -593,7 +603,8 @@ function Punto({ punto, puedeBorrar, indice, nuevos, totalComentarios, ultimo, o
       style={{ animationDelay: `${Math.min(indice * 45, 400)}ms` }}
       className={`surge group relative rounded-lg cursor-pointer transition-all duration-200
         ${r ? 'bg-ink/[0.02] dark:bg-white/[0.015]' : 'bg-white dark:bg-[#1B232E] shadow-[0_1px_2px_rgba(28,37,48,0.06)] dark:shadow-none'}
-        border border-ink/8 dark:border-white/[0.07] hover:border-ink/20 dark:hover:border-white/20 hover:shadow-[0_2px_8px_rgba(28,37,48,0.08)] dark:hover:shadow-none`}>
+        ${nuevos > 0 ? 'border border-signal/50 dark:border-signal/40' : 'border border-ink/8 dark:border-white/[0.07]'}
+        hover:border-ink/20 dark:hover:border-white/20 hover:shadow-[0_2px_8px_rgba(28,37,48,0.08)] dark:hover:shadow-none`}>
 
       <span className={`absolute left-0 top-0 bottom-0 w-[3px] rounded-l-lg transition-all duration-300 group-hover:w-[5px]
         ${r ? 'bg-conform' : 'bg-signal'}`} />
@@ -647,7 +658,7 @@ function Punto({ punto, puedeBorrar, indice, nuevos, totalComentarios, ultimo, o
         {ultimo && (
           <div className="flex items-baseline gap-2 mt-2 pt-2 border-t border-ink/[0.07] dark:border-white/[0.06]">
             <span className="dato text-[11px] text-ink/45 dark:text-white/35 shrink-0">
-              {fechaCorta(ultimo.created_at)}
+              {fechaHora(ultimo.created_at)}
             </span>
             <span className="w-1 h-1 rounded-full bg-ink/15 dark:bg-white/15 shrink-0 self-center" />
             {ultimo.sin_novedades ? (
@@ -704,6 +715,7 @@ export default function App() {
     ]);
     if (p.data) setPuntos(p.data);
     if (c.data) setComentarios(c.data);
+    if (l.error) console.error('Tabla "lecturas": ', l.error.message);
     if (l.data) setLecturas(Object.fromEntries(l.data.map(x => [x.punto_id, x.visto_en])));
   }
 
@@ -733,13 +745,18 @@ export default function App() {
     await supabase.from('puntos').delete().eq('id', id);
   }
 
-  async function marcarVisto(puntoId) {
-    const ahora = new Date().toISOString();
-    setLecturas(prev => ({ ...prev, [puntoId]: ahora }));
-    await supabase.from('lecturas').upsert(
-      { usuario, punto_id: puntoId, visto_en: ahora },
+  /* Marca como visto usando la fecha del último comentario (viene del
+     servidor), no la hora del navegador: así no falla si el reloj del
+     equipo va adelantado o atrasado. */
+  async function marcarVisto(puntoId, hasta) {
+    const cs = comentarios.filter(c => c.punto_id === puntoId);
+    const ts = hasta || (cs.length ? cs[cs.length - 1].created_at : new Date().toISOString());
+    setLecturas(prev => ({ ...prev, [puntoId]: ts }));
+    const { error } = await supabase.from('lecturas').upsert(
+      { usuario, punto_id: puntoId, visto_en: ts },
       { onConflict: 'usuario,punto_id' }
     );
+    if (error) console.error('No se ha podido guardar la lectura:', error.message);
   }
 
   function abrirFicha(punto) {
@@ -753,18 +770,18 @@ export default function App() {
   }
 
   async function comentar(puntoId, texto) {
-    await supabase.from('comentarios').insert({
-      punto_id: puntoId, texto, autor: usuario, sin_novedades: false,
-    });
-    await marcarVisto(puntoId);
+    const { data } = await supabase.from('comentarios')
+      .insert({ punto_id: puntoId, texto, autor: usuario, sin_novedades: false })
+      .select().single();
+    await marcarVisto(puntoId, data?.created_at);
     cargar();
   }
 
   async function sinNovedades(puntoId) {
-    await supabase.from('comentarios').insert({
-      punto_id: puntoId, texto: 'Sin novedades', autor: usuario, sin_novedades: true,
-    });
-    await marcarVisto(puntoId);
+    const { data } = await supabase.from('comentarios')
+      .insert({ punto_id: puntoId, texto: 'Sin novedades', autor: usuario, sin_novedades: true })
+      .select().single();
+    await marcarVisto(puntoId, data?.created_at);
     cargar();
   }
 
