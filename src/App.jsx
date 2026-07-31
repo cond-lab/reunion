@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { supabase } from './supabase';
-import { Plus, Trash2, X, LogOut, Mail, ArrowLeft, Sun, Moon, Check, RotateCcw, Send, MessageSquare, MinusCircle } from 'lucide-react';
+import { supabase, supabaseAlta } from './supabase';
+import { Plus, Trash2, X, LogOut, Mail, ArrowLeft, Sun, Moon, Check, RotateCcw, Send, MessageSquare, MinusCircle, UserPlus, Shield, Copy } from 'lucide-react';
+
+/* ═══ Pon aquí tu email. Solo esta cuenta ve el panel de administración ═══ */
+const ADMIN = 'r.almela@es.polygon.eu';
 
 /* ══ TEMA ══ */
 function useTema() {
@@ -288,7 +291,7 @@ function Redactar({ onGuardar, onCerrar }) {
 }
 
 /* ══ FICHA DEL PUNTO ══ */
-function Ficha({ punto, comentarios, usuario, onCerrar, onComentar, onSinNovedades, onResolver, onBorrar }) {
+function Ficha({ punto, comentarios, usuario, esAdmin, onCerrar, onComentar, onSinNovedades, onResolver, onBorrar }) {
   const [texto, setTexto] = useState('');
   const [enviando, setEnviando] = useState(false);
   const finRef = useRef(null);
@@ -342,7 +345,7 @@ function Ficha({ punto, comentarios, usuario, onCerrar, onComentar, onSinNovedad
                   ${r ? 'text-conform hover:bg-conform/10' : 'text-ink/45 hover:text-conform hover:bg-conform/10 dark:text-white/35'}`}>
                 {r ? <><RotateCcw size={11} /> Reabrir</> : <><Check size={12} strokeWidth={3} /> Resolver</>}
               </button>
-              {punto.autor === usuario && (
+              {(punto.autor === usuario || esAdmin) && (
                 <button onClick={() => { onBorrar(punto.id); onCerrar(); }} title="Eliminar punto"
                   className="w-8 h-8 rounded-md flex items-center justify-center text-ink/30 hover:text-red-500 hover:bg-red-500/10 dark:text-white/25 transition-colors">
                   <Trash2 size={14} />
@@ -445,8 +448,143 @@ function Ficha({ punto, comentarios, usuario, onCerrar, onComentar, onSinNovedad
   );
 }
 
+
+/* ══ ALTA DE USUARIO (solo admin) ══ */
+function AltaUsuario({ onCerrar }) {
+  const [email, setEmail] = useState('');
+  const [clave, setClave] = useState('');
+  const [cargando, setCargando] = useState(false);
+  const [error, setError] = useState('');
+  const [creado, setCreado] = useState(null);
+  const [copiado, setCopiado] = useState(false);
+
+  useEffect(() => {
+    const esc = e => e.key === 'Escape' && onCerrar();
+    window.addEventListener('keydown', esc);
+    return () => window.removeEventListener('keydown', esc);
+  }, [onCerrar]);
+
+  function generar() {
+    const abc = 'abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    setClave(Array.from({ length: 10 }, () => abc[Math.floor(Math.random() * abc.length)]).join(''));
+  }
+
+  async function crear(e) {
+    e.preventDefault();
+    setCargando(true); setError('');
+    const { data, error } = await supabaseAlta.auth.signUp({ email: email.trim(), password: clave });
+    if (error) {
+      setError(error.message.includes('already') || error.message.includes('registered')
+        ? 'Ese email ya tiene cuenta.'
+        : 'No se ha podido crear la cuenta. Revisa el email y que la contraseña tenga al menos 6 caracteres.');
+    } else if (data?.user) {
+      setCreado({ email: email.trim(), clave });
+    }
+    setCargando(false);
+  }
+
+  function copiar() {
+    navigator.clipboard.writeText(`Acceso al parte diario\nUsuario: ${creado.email}\nContraseña: ${creado.clave}\n${window.location.origin + window.location.pathname}`);
+    setCopiado(true);
+    setTimeout(() => setCopiado(false), 2000);
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+      <div className="absolute inset-0 bg-ink/40 dark:bg-black/60 backdrop-blur-[2px]" onClick={onCerrar} />
+      <div className="relative w-full sm:max-w-[460px] bg-paper dark:bg-[#1B232E] rounded-t-2xl sm:rounded-xl
+                      border-t sm:border border-ink/10 dark:border-white/10 shadow-2xl panel overflow-hidden">
+        <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-ink dark:bg-white/40 hidden sm:block" />
+
+        <div className="flex items-center justify-between px-6 h-14 border-b border-ink/8 dark:border-white/[0.07]">
+          <span className="etiqueta text-ink/45 dark:text-white/35 flex items-center gap-2">
+            <Shield size={12} /> Alta de usuario
+          </span>
+          <button onClick={onCerrar} aria-label="Cerrar"
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-ink/35 hover:text-ink hover:bg-ink/5 dark:text-white/30 dark:hover:text-white dark:hover:bg-white/5 transition-colors">
+            <X size={16} />
+          </button>
+        </div>
+
+        {creado ? (
+          <div className="p-6 space-y-5">
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 rounded-lg bg-conform/15 flex items-center justify-center shrink-0">
+                <Check size={15} className="text-conform" strokeWidth={3} />
+              </div>
+              <p className="text-[14px] leading-relaxed text-ink/70 dark:text-white/60 pt-1.5">
+                Cuenta creada. Pásale estos datos para que pueda entrar.
+              </p>
+            </div>
+
+            <div className="rounded-lg bg-chalk dark:bg-white/[0.04] border border-ink/8 dark:border-white/10 p-4 space-y-2.5">
+              <div className="flex justify-between gap-3">
+                <span className="etiqueta text-ink/40 dark:text-white/30">Usuario</span>
+                <span className="dato text-[12.5px] text-ink dark:text-white break-all text-right">{creado.email}</span>
+              </div>
+              <div className="flex justify-between gap-3">
+                <span className="etiqueta text-ink/40 dark:text-white/30">Contraseña</span>
+                <span className="dato text-[12.5px] text-ink dark:text-white">{creado.clave}</span>
+              </div>
+            </div>
+
+            <button onClick={copiar}
+              className="w-full h-11 rounded-lg border border-ink/12 dark:border-white/12 text-[14px] font-medium text-ink/70 dark:text-white/60 hover:bg-ink/5 dark:hover:bg-white/5 flex items-center justify-center gap-2 transition-colors">
+              <Copy size={14} /> {copiado ? 'Copiado' : 'Copiar datos de acceso'}
+            </button>
+
+            <button onClick={() => { setCreado(null); setEmail(''); setClave(''); }}
+              className="etiqueta text-ink/35 hover:text-signal dark:text-white/25 transition-colors">
+              Dar de alta a otro
+            </button>
+          </div>
+        ) : (
+          <form onSubmit={crear} className="p-6 space-y-5">
+            <div>
+              <label className={etiquetaCampo}>Email</label>
+              <input type="email" value={email} onChange={e => setEmail(e.target.value)}
+                placeholder="nombre@polygon.es" required className={campo} autoFocus />
+            </div>
+            <div>
+              <label className={etiquetaCampo}>Contraseña temporal</label>
+              <div className="flex gap-2">
+                <input type="text" value={clave} onChange={e => setClave(e.target.value)}
+                  placeholder="Al menos 6 caracteres" required minLength={6} className={campo + ' dato'} />
+                <button type="button" onClick={generar}
+                  className="shrink-0 px-3 rounded-lg border border-ink/12 dark:border-white/12 etiqueta text-ink/50 dark:text-white/40 hover:bg-ink/5 dark:hover:bg-white/5 transition-colors">
+                  Generar
+                </button>
+              </div>
+              <p className="text-[12px] text-ink/40 dark:text-white/30 mt-2 leading-relaxed">
+                Podrá cambiarla luego desde «He olvidado la contraseña».
+              </p>
+            </div>
+
+            {error && (
+              <div className="text-[13px] leading-snug text-ink/70 dark:text-white/60 bg-signal/10 border-l-2 border-signal rounded-r-lg px-3 py-2.5">
+                {error}
+              </div>
+            )}
+
+            <div className="flex gap-3 pt-1">
+              <button type="button" onClick={onCerrar}
+                className="px-5 h-11 rounded-lg text-[14px] font-medium text-ink/50 hover:text-ink hover:bg-ink/5 dark:text-white/40 dark:hover:text-white dark:hover:bg-white/5 transition-colors">
+                Cancelar
+              </button>
+              <button type="submit" disabled={cargando || !email.trim() || clave.length < 6}
+                className="flex-1 h-11 rounded-lg bg-ink text-paper dark:bg-signal dark:text-ink font-semibold text-[14px] hover:opacity-90 disabled:opacity-30 transition-opacity active:scale-[0.99]">
+                {cargando ? 'Creando…' : 'Crear cuenta'}
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+}
+
 /* ══ TARJETA ══ */
-function Punto({ punto, esMio, indice, nuevos, totalComentarios, onAbrir, onResolver, onBorrar }) {
+function Punto({ punto, puedeBorrar, indice, nuevos, totalComentarios, onAbrir, onResolver, onBorrar }) {
   const r = punto.resuelto;
 
   return (
@@ -478,7 +616,7 @@ function Punto({ punto, esMio, indice, nuevos, totalComentarios, onAbrir, onReso
                 ${r ? 'text-conform hover:bg-conform/10' : 'text-ink/40 hover:text-conform hover:bg-conform/10 dark:text-white/30'}`}>
               {r ? <><RotateCcw size={11} /> Reabrir</> : <><Check size={12} strokeWidth={3} /> Resolver</>}
             </button>
-            {esMio && (
+            {puedeBorrar && (
               <button onClick={() => onBorrar(punto.id)} title="Eliminar"
                 className="w-7 h-7 rounded-md flex items-center justify-center text-ink/25 hover:text-red-500 hover:bg-red-500/10 dark:text-white/20 transition-colors sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100">
                 <Trash2 size={13} />
@@ -520,6 +658,7 @@ export default function App() {
   const [redactando, setRedactando] = useState(false);
   const [abierto, setAbierto] = useState(null);
   const [filtro, setFiltro] = useState('pendientes');
+  const [dandoAlta, setDandoAlta] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => { setSesion(data.session); setCargandoSesion(false); });
@@ -531,6 +670,7 @@ export default function App() {
   }, []);
 
   const usuario = sesion?.user?.email;
+  const esAdmin = usuario === ADMIN;
 
   async function cargar() {
     if (!usuario) return;
@@ -642,11 +782,13 @@ export default function App() {
   return (
     <div className="min-h-screen bg-paper dark:bg-[#141A22] transition-colors duration-300">
       {redactando && <Redactar onGuardar={guardarPunto} onCerrar={() => setRedactando(false)} />}
+      {dandoAlta && <AltaUsuario onCerrar={() => setDandoAlta(false)} />}
       {fichaActual && (
         <Ficha
           punto={fichaActual}
           comentarios={porPunto[fichaActual.id] || []}
           usuario={usuario}
+          esAdmin={esAdmin}
           onCerrar={cerrarFicha}
           onComentar={comentar}
           onSinNovedades={sinNovedades}
@@ -663,6 +805,12 @@ export default function App() {
               <span className="dato h-[19px] min-w-[19px] px-1.5 rounded-full bg-signal text-white text-[10px] font-semibold flex items-center justify-center mr-1.5">
                 {totalNuevos}
               </span>
+            )}
+            {esAdmin && (
+              <button onClick={() => setDandoAlta(true)} title="Dar de alta usuario"
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-ink/35 hover:text-signal hover:bg-signal/10 dark:text-white/30 transition-colors">
+                <UserPlus size={15} />
+              </button>
             )}
             <button onClick={toggleTema} aria-label="Cambiar tema"
               className="w-8 h-8 rounded-lg flex items-center justify-center text-ink/35 hover:text-ink hover:bg-ink/5 dark:text-white/30 dark:hover:text-white dark:hover:bg-white/5 transition-colors">
@@ -751,7 +899,7 @@ export default function App() {
         ) : (
           <div className="space-y-2.5">
             {lista.map((p, i) => (
-              <Punto key={p.id} punto={p} indice={i} esMio={p.autor === usuario}
+              <Punto key={p.id} punto={p} indice={i} puedeBorrar={p.autor === usuario || esAdmin}
                 nuevos={nuevosDe(p.id)}
                 totalComentarios={(porPunto[p.id] || []).length}
                 onAbrir={abrirFicha} onResolver={resolver} onBorrar={borrar} />
