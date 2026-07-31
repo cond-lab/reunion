@@ -56,7 +56,7 @@ function Marca({ compacta = false }) {
         <span className="absolute inset-0 rounded-full bg-signal animate-ping opacity-40" />
       </div>
       <span className={`etiqueta ${compacta ? 'text-ink/50 dark:text-white/40' : 'text-ink/60 dark:text-white/50'}`}>
-        Polygon · Reunión 08:00
+        Polygon · Reunión 08:00 ZULU
       </span>
     </div>
   );
